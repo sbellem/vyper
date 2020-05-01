@@ -1,5 +1,12 @@
-DataChange: event({_setter: indexed(address), _value: int128})
+mpc Prog:
+    async def prog(ctx, msg_field_elem):
+        msg_share = ctx.Share(msg_field_elem)
+        opened_value = await msg_share.open()
+        opened_value_bytes = opened_value.value.to_bytes(32, "big")
+        msg = opened_value_bytes.decode().strip("\x00")
+        return msg
 
+DataChange: event({_setter: indexed(address), _value: int128})
 storedData: public(int128)
 
 @public
@@ -16,3 +23,11 @@ def set(_x: int128):
 @public
 def reset():
   self.storedData = 0
+
+@mpc
+async def prog(ctx: Mpc, msg_field_eleme):
+    msg_share = ctx.Share(msg_field_elem)
+    opened_value = await msg_share.open()
+    opened_value_bytes = opened_value.value.to_bytes(32, "big")
+    msg = opened_value_bytes.decode().strip("\x00")
+    return msg

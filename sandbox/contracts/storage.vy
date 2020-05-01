@@ -7,7 +7,3 @@ def __init__(_x: int128):
 @public
 def set(_x: int128):
   self.storedData = _x
-
-@mpc
-def prog(_ctx: int128):
-    self.storedData = _ctx
