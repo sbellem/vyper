@@ -14,7 +14,7 @@ def generate_default_arg_sigs(code, contracts, global_ctx):
                 code,
                 sigs=contracts,
                 custom_structs=global_ctx._structs,
-                constants=global_ctx._constants
+                constants=global_ctx._constants,
             )
         ]
     base_args = code.args.args[:-total_default_args]
@@ -41,7 +41,7 @@ def generate_default_arg_sigs(code, contracts, global_ctx):
             new_code,
             sigs=contracts,
             custom_structs=global_ctx._structs,
-            constants=global_ctx._constants
+            constants=global_ctx._constants,
         )
         default_sig_strs.append(sig.sig)
         sig_fun_defs.append(sig)
@@ -62,7 +62,7 @@ def mk_full_signature(global_ctx, sig_formatter=None):
 
     o = []
 
-    # Produce event signatues.
+    # Produce event signatures.
     for code in global_ctx._events:
         sig = EventSignature.from_declaration(code, global_ctx)
         o.append(sig_formatter(sig))
@@ -73,10 +73,12 @@ def mk_full_signature(global_ctx, sig_formatter=None):
             code,
             sigs=global_ctx._contracts,
             custom_structs=global_ctx._structs,
-            constants=global_ctx._constants
+            constants=global_ctx._constants,
         )
         if not sig.private:
-            default_sigs = generate_default_arg_sigs(code, global_ctx._contracts, global_ctx)
+            default_sigs = generate_default_arg_sigs(
+                code, global_ctx._contracts, global_ctx
+            )
             for s in default_sigs:
                 o.append(sig_formatter(s))
     return o
@@ -100,7 +102,9 @@ def mk_single_method_identifier(code, global_ctx):
         constants=global_ctx._constants,
     )
     if not sig.private:
-        default_sigs = generate_default_arg_sigs(code, global_ctx._contracts, global_ctx)
+        default_sigs = generate_default_arg_sigs(
+            code, global_ctx._contracts, global_ctx
+        )
         for s in default_sigs:
             identifiers[s.sig] = hex(s.method_id)
 

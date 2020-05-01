@@ -58,7 +58,20 @@ def get_node(
     if not isinstance(ast_struct, dict):
         ast_struct = ast_struct.__dict__
 
+    # XXX BEGIN MPC - ratelang
+    if "mpc" in ast_struct.get("decorator_list", ()):
+        mpc = True
+    else:
+        mpc = False
+    # XXX END MPC - ratelang
+
     vy_class = getattr(sys.modules[__name__], ast_struct["ast_type"], None)
+
+    if isinstance(vy_class, (AsyncFunctionDef, Await)) and not mpc:
+        _raise_syntax_exc(
+            f"Invalid syntax (unsupported '{vy_class}' Python AST node)", ast_struct,
+        )
+
     if not vy_class:
         if ast_struct["ast_type"] == "Delete":
             _raise_syntax_exc("Deleting is not supported", ast_struct)
@@ -70,6 +83,7 @@ def get_node(
                 f"Vyper does not support {op} as a unary operator", parent
             )
         else:
+            breakpoint()
             _raise_syntax_exc(
                 f"Invalid syntax (unsupported '{ast_struct['ast_type']}' Python AST node)",
                 ast_struct,
@@ -594,6 +608,10 @@ class FunctionDef(TopLevel):
     __slots__ = ("args", "returns", "decorator_list", "pos")
 
 
+class AsyncFunctionDef(TopLevel):
+    __slots__ = ("args", "returns", "decorator_list", "pos")
+
+
 class DocStr(VyperNode):
     """
     A docstring.
@@ -623,6 +641,11 @@ class Return(VyperNode):
 
 class ClassDef(VyperNode):
     __slots__ = ("class_type", "name", "body")
+
+
+class Await(VyperNode):
+    # XXX Only for MPC (ratelang)
+    __slots__ = ("value",)
 
 
 class Constant(VyperNode):

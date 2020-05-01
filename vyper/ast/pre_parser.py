@@ -55,6 +55,8 @@ VYPER_CLASS_TYPES = {
     "struct",
 }
 
+MPC_CLASS_TYPES = {"mpc"}
+
 
 def pre_parse(code: str) -> Tuple[ClassTypes, str]:
     """
@@ -117,7 +119,11 @@ def pre_parse(code: str) -> Tuple[ClassTypes, str]:
 
             # Translate vyper-specific class keywords into python "class"
             # keyword
-            if typ == NAME and string in VYPER_CLASS_TYPES and start[1] == 0:
+            if (
+                typ == NAME
+                and string in VYPER_CLASS_TYPES.union(MPC_CLASS_TYPES)
+                and start[1] == 0
+            ):
                 toks = [TokenInfo(NAME, "class", start, end, line)]
                 previous_keyword = string
 
