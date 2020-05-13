@@ -31,7 +31,13 @@ def parse_to_ast(source_code: str, source_id: int = 0) -> vy_ast.Module:
     except SyntaxError as e:
         # TODO: Ensure 1-to-1 match of source_code:reformatted_code SyntaxErrors
         raise SyntaxException(str(e), source_code, e.lineno, e.offset) from e
-    annotate_python_ast(py_ast, source_code, class_types, source_id)
+
+    # XXX ratelang
+    # TODO extract MPC code out
+
+    annotated_node = annotate_python_ast(py_ast, source_code, class_types, source_id)
+
+    assert annotated_node == py_ast
 
     # Convert to Vyper AST.
     return vy_ast.get_node(py_ast)  # type: ignore

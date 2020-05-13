@@ -284,6 +284,7 @@ class GlobalContext:
     # Parser for a single line
     @staticmethod
     def parse_line(source_code: str) -> list:
+        breakpoint()
         parsed_ast = vy_ast.parse_to_ast(source_code)[0]
         return parsed_ast
 

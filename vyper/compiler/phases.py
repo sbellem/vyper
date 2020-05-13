@@ -67,6 +67,7 @@ class CompilerData:
     @property
     def vyper_module(self) -> vy_ast.Module:
         if not hasattr(self, "_vyper_module"):
+            breakpoint()
             self._vyper_module = generate_ast(self.source_code, self.source_id)
 
         return self._vyper_module
@@ -141,6 +142,7 @@ def generate_ast(source_code: str, source_id: int) -> vy_ast.Module:
     vy_ast.Module
         Top-level Vyper AST node
     """
+    breakpoint()
     return vy_ast.parse_to_ast(source_code, source_id)
 
 

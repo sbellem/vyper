@@ -75,6 +75,13 @@ class AnnotatingVisitor(python_ast.NodeTransformer):
     def visit_FunctionDef(self, node):
         return self._visit_docstring(node)
 
+    def visit_AsyncFunctionDef(self, node):
+        breakpoint()
+        for dec in node.decorator_list:
+            if dec.id == "mpc":
+                return None
+        return self._visit_docstring(node)
+
     def visit_ClassDef(self, node):
         """
         Annotate the Class node with it's original type from the Vyper source.
