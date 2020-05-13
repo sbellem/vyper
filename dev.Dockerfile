@@ -1,4 +1,5 @@
-FROM python:3.7-slim
+FROM python:3.9.0a6-buster
+#FROM python:3.8
 
 # Specify label-schema specific arguments and labels.
 ARG BUILD_DATE
@@ -17,12 +18,12 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         apt-utils \
         build-essential \
-        gcc \
-        git \
-        libc6-dev \
+        #gcc \
+        #git \
+        #libc6-dev \
         libc-dev \
-        libssl-dev \
-        libgmp-dev \
+        #libssl-dev \
+        #libgmp-dev \
     && rm -rf /var/lib/apt/lists/*
 
 ADD . /code
@@ -37,6 +38,13 @@ WORKDIR /code
 # dev deps
 RUN apt-get update && apt-get install -y npm
 RUN npm install -g ganache-cli
+
+# Rust -- needed to build blake2b-py with Python 3.9
+ENV RUSTUP_HOME /usr/local/rustup
+ENV CARGO_HOME /usr/local/cargo
+COPY --from=rustlang/rust:nightly-buster $RUSTUP_HOME $RUSTUP_HOME
+COPY --from=rustlang/rust:nightly-buster $CARGO_HOME $CARGO_HOME
+ENV PATH "${CARGO_HOME}/bin:${PATH}"
 
 RUN pip install -e .["dev","lint","test"]
 #    python setup.py test --addopts "--version" && \

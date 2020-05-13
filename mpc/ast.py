@@ -1,0 +1,24 @@
+from ast import NodeTransformer
+
+import astunparse
+
+# TODO Try Python 3.9 and use ast.unparse
+# see https://docs.python.org/3.9/library/ast.html#ast.unparse
+
+# TODO figure out how to get an AST object from the mpc nodes extracted out
+
+
+def _vyper_only_source_code(ast_node):
+    return astunparse.unparse(ast_node)
+
+
+class MPCNodeExtractor(NodeTransformer):
+    def __init__(self):
+        self.mpc_nodes = []
+
+    def visit_AsyncFunctionDef(self, node):  # noqa N802
+        self.generic_visit(node)
+        for dec in node.decorator_list:
+            if dec.id == "mpc":
+                self.mpc_nodes.append(node)
+                return None

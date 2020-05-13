@@ -196,12 +196,10 @@ class FunctionSignature:
         # Determine the arguments, expects something of the form def foo(arg1:
         # int128, arg2: int128 ...
         args = []
-        breakpoint()
         for arg in code.args.args:
             # Each arg needs a type specified.
             typ = arg.annotation
             if not typ:
-                breakpoint()
                 raise InvalidType("Argument must have type", arg)
             # Validate arg name.
             check_valid_varname(
