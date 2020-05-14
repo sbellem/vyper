@@ -34,6 +34,13 @@ OUTPUT_FORMATS = {
     "opcodes_runtime": output.build_opcodes_runtime_output,
 }
 
+from mpc.compiler import output as mpc_ouput  # noqa E402
+
+MPC_OUTPUT_FORMATS = {
+    # requires mpc_module
+    "ast_dict": output.build_ast_dict,
+}
+
 
 @evm_wrapper
 def compile_codes(
