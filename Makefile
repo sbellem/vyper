@@ -94,3 +94,6 @@ ifndef SKIP_PYPI
 	$(MAKE) pypi-build
 	$(MAKE) pypi-release
 endif
+
+dockerdev:
+	docker-compose run --rm vyper bash
