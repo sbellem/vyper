@@ -76,7 +76,6 @@ class AnnotatingVisitor(python_ast.NodeTransformer):
         return self._visit_docstring(node)
 
     def visit_AsyncFunctionDef(self, node):
-        breakpoint()
         for dec in node.decorator_list:
             if dec.id == "mpc":
                 return None
@@ -115,7 +114,7 @@ class AnnotatingVisitor(python_ast.NodeTransformer):
             node.ast_type = "Bytes"
         else:
             raise SyntaxException(
-                f"Invalid syntax (unsupported Python Constant AST node).",
+                "Invalid syntax (unsupported Python Constant AST node).",
                 self._source_code,
                 node.lineno,
                 node.col_offset,

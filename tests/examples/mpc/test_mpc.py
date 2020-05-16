@@ -11,8 +11,8 @@ def mpc_contract_code():
 
 
 @pytest.fixture
-def mpc_contract(w3, get_contract, contract_code):
-    contract = get_contract(contract_code, INITIAL_VALUE)
+def mpc_contract(w3, get_contract, mpc_contract_code):
+    contract = get_contract(mpc_contract_code, INITIAL_VALUE)
     return contract
 
 

@@ -83,7 +83,6 @@ def get_node(
                 f"Vyper does not support {op} as a unary operator", parent
             )
         else:
-            breakpoint()
             _raise_syntax_exc(
                 f"Invalid syntax (unsupported '{ast_struct['ast_type']}' Python AST node)",
                 ast_struct,
@@ -705,7 +704,7 @@ class Hex(Num):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if len(self.value) % 2:
-            _raise_syntax_exc(f"Hex notation requires an even number of digits", kwargs)
+            _raise_syntax_exc("Hex notation requires an even number of digits", kwargs)
 
 
 class Str(Constant):

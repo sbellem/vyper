@@ -34,13 +34,28 @@ def parse_to_ast(source_code: str, source_id: int = 0) -> vy_ast.Module:
 
     # XXX ratelang
     # TODO extract MPC code out
+    from mpc.ast import MPCNodeExtractor
 
-    annotated_node = annotate_python_ast(py_ast, source_code, class_types, source_id)
+    mpc_node_extractor = MPCNodeExtractor()
+    # mpc_node_extractor.visit(py_ast)
+    vyper_ast = mpc_node_extractor.visit(py_ast)
+    # TODO How to get an AST object from mpc nodes?
+    mpc_nodes = mpc_node_extractor.mpc_nodes  # noqa
+    vyper_source_code = python_ast.unparse(py_ast)
+    # extract mpc class types - check for values of dict that are "mpc"
+    mpc_class_types = {k: v for k, v in class_types.items() if v == "mpc"}  # noqa
+    vyper_class_types = {k: v for k, v in class_types.items() if v != "mpc"}
 
-    assert annotated_node == py_ast
+    # annotated_node = annotate_python_ast(py_ast, source_code, class_types, source_id)
+    annotated_node = annotate_python_ast(
+        py_ast, vyper_source_code, vyper_class_types, source_id
+    )
+
+    assert annotated_node == py_ast == vyper_ast
 
     # Convert to Vyper AST.
-    return vy_ast.get_node(py_ast)  # type: ignore
+    # return vy_ast.get_node(py_ast)  # type: ignore
+    return vy_ast.get_node(vyper_ast)  # type: ignore
 
 
 def ast_to_dict(ast_struct: Union[vy_ast.VyperNode, List]) -> Union[Dict, List]:

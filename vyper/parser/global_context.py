@@ -186,7 +186,6 @@ class GlobalContext:
                         interface_codes[interface_name]
                     )  # noqa: E501
             else:
-                breakpoint()
                 raise StructureException("Invalid top-level statement", item)
 
         # Merge intefaces.
@@ -284,7 +283,6 @@ class GlobalContext:
     # Parser for a single line
     @staticmethod
     def parse_line(source_code: str) -> list:
-        breakpoint()
         parsed_ast = vy_ast.parse_to_ast(source_code)[0]
         return parsed_ast
 

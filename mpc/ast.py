@@ -1,6 +1,6 @@
-from ast import NodeTransformer
+from ast import NodeTransformer, unparse
 
-import astunparse
+# import astunparse
 
 # TODO Try Python 3.9 and use ast.unparse
 # see https://docs.python.org/3.9/library/ast.html#ast.unparse
@@ -8,8 +8,12 @@ import astunparse
 # TODO figure out how to get an AST object from the mpc nodes extracted out
 
 
+def ast_to_dict():
+    raise NotImplementedError
+
+
 def _vyper_only_source_code(ast_node):
-    return astunparse.unparse(ast_node)
+    return unparse(ast_node)
 
 
 class MPCNodeExtractor(NodeTransformer):

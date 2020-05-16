@@ -9,6 +9,62 @@ from vyper.parser.global_context import GlobalContext
 from vyper.typing import InterfaceImports
 
 
+class SuperCompiler:
+    """Class to handle multiple "types" of ``CompilerData``.
+
+    This is for the case in which a contract contains programming constructs
+    external to the vyper domain for interoperability with other systems
+    for example.
+
+    As an example, a contract could contain MPC programs that ought to be
+    executed by an MPC network. The vyper contract may act as a coordinator
+    (trusted party) to help in the execution of the MPC protocol partially
+    described in the contract. The ``SuperCompiler`` would take care of
+    compiling both the vyper contract and the MPC programs.
+
+    In the context of the ``CompilerData`` used to handle the different
+    compilation phases for vyper, the ``SuperCompiler`` acts as a point of
+    entry to perform pre-compilation phases required for the vyper
+    ``CompilerData`` to operate correctly, but also for the "MPC"
+    ``CompilerData`` specific compilation phase handler.
+
+    At the risk of being inacccurate, it may be useful to view this
+    ``CompilerData`` as a compiler state machine. Hence, vyper has its
+    own vyper compiler state machine, and the super compiler would
+    allow running that compiler state machine but would also allow
+    for the execution of other compiler state machines that would be
+    provided in a perhaps "plugin" manner.
+
+    The SuperCompiler, or Compiler Machine, or MetaCompiler, or whatever
+    you want to call it, must first extract the vyper code and external
+    codes. It seems easier to do so with an AST and hence, the SuperCompiler
+    could:
+
+    1. first get the AST for the "mixed" source code
+    2. get the ast for the vyper code, its source code, and metadata
+    3. get the ast for the mpc code, its source code, and metadata
+
+    once the separation is done, the resulting pieces can be used by or
+    fed to the specialized compiler machines (e.g. vyper and mpc).
+    """
+
+    def __init__(
+        self,
+        *compiler_machines,
+        vyper_compiler_machine=None,
+        source_code: str,
+        contract_name: str = "VyperContract",
+        interface_codes: Optional[InterfaceImports] = None,
+        source_id: int = 0,
+    ) -> None:
+        self.compiler_machines = compiler_machines
+        self.vyper_compiler_machine
+        self.contract_name = contract_name
+        self.source_code = source_code
+        self.interface_codes = interface_codes
+        self.source_id = source_id
+
+
 class CompilerData:
     """
     Object for fetching and storing compiler data for a Vyper contract.
@@ -68,10 +124,16 @@ class CompilerData:
         self.source_id = source_id
 
     @property
+    def vyper_code(self) -> str:
+        if not hasattr(self, "_vyper_code"):
+            self._vyper_code = extract_vyper_code(self.source_code, self.source_id)
+        return self.vyper_code
+
+    @property
     def vyper_module(self) -> vy_ast.Module:
         if not hasattr(self, "_vyper_module"):
-            breakpoint()
             self._vyper_module = generate_ast(self.source_code, self.source_id)
+            # self._vyper_module = generate_ast(self.vyper_code, self.source_id)
 
         return self._vyper_module
 
@@ -134,6 +196,27 @@ class CompilerData:
         return self._bytecode_runtime
 
 
+def _generate_py_asts(source_code: str, source_id: int) -> vy_ast.Module:
+    """
+    Generate python ASTs from source code.
+
+    This is a preliminary phase of compilation.
+
+    Arguments
+    ---------
+    source_code : str
+        Vyper source code.
+    source_id : int
+        ID number used to identify this contract in the source map.
+
+    Returns
+    -------
+    vy_ast.Module
+        Top-level Vyper AST node
+    """
+    return vy_ast.parse_to_ast(source_code, source_id)
+
+
 def generate_ast(source_code: str, source_id: int) -> vy_ast.Module:
     """
     Generate a Vyper AST from source code.
@@ -150,7 +233,6 @@ def generate_ast(source_code: str, source_id: int) -> vy_ast.Module:
     vy_ast.Module
         Top-level Vyper AST node
     """
-    breakpoint()
     return vy_ast.parse_to_ast(source_code, source_id)
 
 
