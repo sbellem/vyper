@@ -137,7 +137,7 @@ def compile_codes(
 UNKNOWN_CONTRACT_NAME = "<unknown>"
 
 
-def _compile_code(
+def compile_code(
     contract_source: str,
     output_formats: Optional[OutputFormats] = None,
     interface_codes: Optional[InterfaceImports] = None,
@@ -256,8 +256,8 @@ def ratel_compile_codes(
 vyper_compile_codes = compile_codes
 
 
-# def ratel_compile_code(
-def compile_code(
+def ratel_compile_code(
+    # def compile_code(
     contract_source: str,
     output_formats: Optional[OutputFormats] = None,
     interface_codes: Optional[InterfaceImports] = None,
@@ -275,6 +275,7 @@ def compile_code(
         vyper_code = fcc.extract_vyper_code(contract_source)
     else:
         vyper_code = contract_source
+    breakpoint()
     # TODO
     # vyper_output = compile_code(
     #    vyper_code, output_formats, interface_codes, evm_version
