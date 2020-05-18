@@ -99,28 +99,37 @@ def compile_codes(
         # trailing newline fixes python parsing bug when source ends in a comment
         # https://bugs.python.org/issue35107
         source_code = f"{contract_sources[contract_name]}\n"
-        interfaces: Any = interface_codes
-        if (
-            isinstance(interfaces, dict)
-            and contract_name in interfaces
-            and isinstance(interfaces[contract_name], dict)
-        ):
-            interfaces = interfaces[contract_name]
+        _out = get_outputs(
+            contract_name,
+            source_code,
+            output_formats=output_formats[contract_name],
+            exc_handler=exc_handler,
+            interface_codes=interface_codes,
+            source_id=source_id,
+        )
+        out[contract_name] = _out
+        # interfaces: Any = interface_codes
+        # if (
+        #    isinstance(interfaces, dict)
+        #    and contract_name in interfaces
+        #    and isinstance(interfaces[contract_name], dict)
+        # ):
+        #    interfaces = interfaces[contract_name]
 
-        compiler_data = CompilerData(source_code, contract_name, interfaces, source_id)
-        for output_format in output_formats[contract_name]:
-            if output_format not in OUTPUT_FORMATS:
-                raise ValueError(f"Unsupported format type {repr(output_format)}")
-            try:
-                out.setdefault(contract_name, {})
-                out[contract_name][output_format] = OUTPUT_FORMATS[output_format](
-                    compiler_data
-                )
-            except Exception as exc:
-                if exc_handler is not None:
-                    exc_handler(contract_name, exc)
-                else:
-                    raise exc
+        # compiler_data = CompilerData(source_code, contract_name, interfaces, source_id)
+        # for output_format in output_formats[contract_name]:
+        #    if output_format not in OUTPUT_FORMATS:
+        #        raise ValueError(f"Unsupported format type {repr(output_format)}")
+        #    try:
+        #        out.setdefault(contract_name, {})
+        #        out[contract_name][output_format] = OUTPUT_FORMATS[output_format](
+        #            compiler_data
+        #        )
+        #    except Exception as exc:
+        #        if exc_handler is not None:
+        #            exc_handler(contract_name, exc)
+        #        else:
+        #            raise exc
 
     return out
 
@@ -128,7 +137,7 @@ def compile_codes(
 UNKNOWN_CONTRACT_NAME = "<unknown>"
 
 
-def compile_code(
+def _compile_code(
     contract_source: str,
     output_formats: Optional[OutputFormats] = None,
     interface_codes: Optional[InterfaceImports] = None,
@@ -169,55 +178,59 @@ def compile_code(
     )[UNKNOWN_CONTRACT_NAME]
 
 
+########################################################################################
+#                                                                                      #
+#                             ratelang experiment                                      #
+#                                                                                      #
+########################################################################################
+
+
+def get_outputs(
+    contract_name: str,
+    source_code: str,
+    output_formats: Union[OutputFormats, None] = None,
+    exc_handler: Union[Callable, None] = None,
+    interface_codes: Union[InterfaceDict, InterfaceImports, None] = None,
+    source_id: int = 0,
+):
+    out = {}
+    interfaces: Any = interface_codes
+    if (
+        isinstance(interfaces, dict)
+        and contract_name in interfaces
+        and isinstance(interfaces[contract_name], dict)
+    ):
+        interfaces = interfaces[contract_name]
+
+    compiler_data = CompilerData(source_code, contract_name, interfaces, source_id)
+    for output_format in output_formats:
+        if output_format not in OUTPUT_FORMATS:
+            raise ValueError(f"Unsupported format type {repr(output_format)}")
+        try:
+            out[output_format] = OUTPUT_FORMATS[output_format](compiler_data)
+        except Exception as exc:
+            if exc_handler is not None:
+                exc_handler(contract_name, exc)
+            else:
+                raise exc
+    return out
+
+
 @evm_wrapper
-def compile_mixed_codes(
+def ratel_compile_codes(
     contract_sources: ContractCodes,
     output_formats: Union[OutputDict, OutputFormats, None] = None,
     exc_handler: Union[Callable, None] = None,
     interface_codes: Union[InterfaceDict, InterfaceImports, None] = None,
     initial_id: int = 0,
-    ext_compiler_machines=None,
+    ratel_compiler_machine=None,
 ) -> OrderedDict:
-    """
-    Generate compiler output(s) from one or more contract source codes.
-
-    Arguments
-    ---------
-    contract_sources: Dict[str, str]
-        Vyper source codes to be compiled. Formatted as `{"contract name": "source code"}`
-    output_formats: List, optional
-        List of compiler outputs to generate. Possible options are all the keys
-        in `OUTPUT_FORMATS`. If not given, the deployment bytecode is generated.
-    exc_handler: Callable, optional
-        Callable used to handle exceptions if the compilation fails. Should accept
-        two arguments - the name of the contract, and the exception that was raised
-    initial_id: int, optional
-        The lowest source ID value to be used when generating the source map.
-    evm_version: str, optional
-        The target EVM ruleset to compile for. If not given, defaults to the latest
-        implemented ruleset.
-    interface_codes: Dict, optional
-        Interfaces that may be imported by the contracts during compilation.
-
-        * May be a singular dictionary shared across all sources to be compiled,
-          i.e. `{'interface name': "definition"}`
-        * or may be organized according to contracts that are being compiled, i.e.
-          `{'contract name': {'interface name': "definition"}`
-
-        * Interface definitions are formatted as: `{'type': "json/vyper", 'code': "interface code"}`
-        * JSON interfaces are given as lists, vyper interfaces as strings
-
-    Returns
-    -------
-    Dict
-        Compiler output as `{'contract name': {'output key': "output data"}}`
-    """
-
     if output_formats is None:
         output_formats = ("bytecode",)
     if isinstance(output_formats, Sequence):
-        # output_formats = {k: output_formats for k in contract_sources}
-        output_formats = dict((k, output_formats) for k in contract_sources.keys())
+        output_formats = {
+            contract_name: output_formats for contract_name in contract_sources
+        }
 
     out: OrderedDict = OrderedDict()
     for source_id, contract_name in enumerate(
@@ -226,71 +239,55 @@ def compile_mixed_codes(
         # trailing newline fixes python parsing bug when source ends in a comment
         # https://bugs.python.org/issue35107
         source_code = f"{contract_sources[contract_name]}\n"
-        interfaces: Any = interface_codes
-        if (
-            isinstance(interfaces, dict)
-            and contract_name in interfaces
-            and isinstance(interfaces[contract_name], dict)
-        ):
-            interfaces = interfaces[contract_name]
-
-        compiler_data = CompilerData(source_code, contract_name, interfaces, source_id)
-        for output_format in output_formats[contract_name]:
-            if output_format not in OUTPUT_FORMATS:
-                raise ValueError(f"Unsupported format type {repr(output_format)}")
-            try:
-                out.setdefault(contract_name, {})
-                out[contract_name][output_format] = OUTPUT_FORMATS[output_format](
-                    compiler_data
-                )
-            except Exception as exc:
-                if exc_handler is not None:
-                    exc_handler(contract_name, exc)
-                else:
-                    raise exc
+        _out = get_outputs(
+            contract_name,
+            source_code,
+            output_formats=output_formats[contract_name],
+            exc_handler=exc_handler,
+            interface_codes=interface_codes,
+            source_id=source_id,
+        )
+        out[contract_name] = _out
 
     return out
 
 
-def compile_mixed_code(
+# RATEL: alias for "native" vyper `compile_codes` function
+vyper_compile_codes = compile_codes
+
+
+# def ratel_compile_code(
+def compile_code(
     contract_source: str,
     output_formats: Optional[OutputFormats] = None,
     interface_codes: Optional[InterfaceImports] = None,
     evm_version: str = DEFAULT_EVM_VERSION,
+    *,
     # external CompilerMachine or CompilerData
-    ext_compiler_machines=None,
+    foreign_code_compiler=None,
+    foreign_code_output_formats=None,
+    return_vyper_source=False,
 ) -> dict:
-    """
-    Generate compiler output(s) from a single contract source code.
-
-    Arguments
-    ---------
-    contract_source: str
-        Vyper source codes to be compiled.
-    output_formats: List, optional
-        List of compiler outputs to generate. Possible options are all the keys
-        in `OUTPUT_FORMATS`. If not given, the deployment bytecode is generated.
-    evm_version: str, optional
-        The target EVM ruleset to compile for. If not given, defaults to the latest
-        implemented ruleset.
-    interface_codes: Dict, optional
-        Interfaces that may be imported by the contracts during compilation.
-
-        * Formatted as as `{'interface name': {'type': "json/vyper", 'code': "interface code"}}`
-        * JSON interfaces are given as lists, vyper interfaces as strings
-
-    Returns
-    -------
-    Dict
-        Compiler output as `{'output key': "output data"}`
-    """
-
-    contract_sources = {UNKNOWN_CONTRACT_NAME: contract_source}
-
-    return compile_mixed_codes(
-        contract_sources,
+    # RATEL
+    # process contract source code to extract vyper code, and foreign code
+    if foreign_code_compiler:
+        fcc = foreign_code_compiler
+        vyper_code = fcc.extract_vyper_code(contract_source)
+    else:
+        vyper_code = contract_source
+    # TODO
+    # vyper_output = compile_code(
+    #    vyper_code, output_formats, interface_codes, evm_version
+    # )
+    # foreign_output = ...
+    # return {"vyper": vyper_output, "foreign_code_key": foreign_output}
+    vyper_contract_sources = {UNKNOWN_CONTRACT_NAME: vyper_code}
+    output = vyper_compile_codes(
+        vyper_contract_sources,
         output_formats,
         interface_codes=interface_codes,
         evm_version=evm_version,
-        ext_compiler_machines=ext_compiler_machines,
     )[UNKNOWN_CONTRACT_NAME]
+    if return_vyper_source:
+        output = (output, vyper_code)
+    return output

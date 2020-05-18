@@ -1,5 +1,4 @@
-FROM python:3.9.0a6-buster
-#FROM python:3.8
+FROM python:3.8-slim
 
 # Specify label-schema specific arguments and labels.
 ARG BUILD_DATE
@@ -18,37 +17,21 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         apt-utils \
         build-essential \
-        #gcc \
-        #git \
-        #libc6-dev \
+        gcc \
+        git \
+        libc6-dev \
         libc-dev \
-        #libssl-dev \
-        #libgmp-dev \
+        libssl-dev \
+        libgmp-dev \
     && rm -rf /var/lib/apt/lists/*
 
 ADD . /code
 
 WORKDIR /code
 
-# Pass `--addopts "--version"` because want to execute `python setup.py test` to include test dependencies in built docker-image, but avoid to execute the whole test suite here.
-#RUN python setup.py install && \
-#    python setup.py test --addopts "--version" && \
-#    apt-get purge -y --auto-remove apt-utils gcc libc6-dev libc-dev libssl-dev
-
 # dev deps
 RUN apt-get update && apt-get install -y npm
 RUN npm install -g ganache-cli
 
-# Rust -- needed to build blake2b-py with Python 3.9
-ENV RUSTUP_HOME /usr/local/rustup
-ENV CARGO_HOME /usr/local/cargo
-COPY --from=rustlang/rust:nightly-buster $RUSTUP_HOME $RUSTUP_HOME
-COPY --from=rustlang/rust:nightly-buster $CARGO_HOME $CARGO_HOME
-ENV PATH "${CARGO_HOME}/bin:${PATH}"
-
 RUN pip install -e .["dev","lint","test"]
-#    python setup.py test --addopts "--version" && \
-#    apt-get purge -y --auto-remove apt-utils gcc libc6-dev libc-dev libssl-dev
-
-#ENTRYPOINT ["/usr/local/bin/vyper"]
-#ENTRYPOINT ["bash"]
+RUN pip install astunparse

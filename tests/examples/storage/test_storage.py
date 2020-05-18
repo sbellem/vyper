@@ -29,13 +29,13 @@ def test_set(w3, storage_contract):
     assert storage_contract.storedData() == -5
 
 
-def test_prog(w3, storage_contract):
-    k0 = w3.eth.accounts[0]
-
-    # Let k0 try to set the value to 10
-    storage_contract.prog(10, transact={"from": k0})
-    assert storage_contract.storedData() == 10  # Directly access storedData
-
-    # Let k0 try to set the value to -5
-    storage_contract.prog(-5, transact={"from": k0})
-    assert storage_contract.storedData() == -5
+# def test_prog(w3, storage_contract):
+#    k0 = w3.eth.accounts[0]
+#
+#    # Let k0 try to set the value to 10
+#    storage_contract.prog(10, transact={"from": k0})
+#    assert storage_contract.storedData() == 10  # Directly access storedData
+#
+#    # Let k0 try to set the value to -5
+#    storage_contract.prog(-5, transact={"from": k0})
+#    assert storage_contract.storedData() == -5

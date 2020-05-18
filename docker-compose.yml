@@ -9,5 +9,11 @@ services:
       - .:/code
     environment:
       PYTHONBREAKPOINT: ipdb.set_trace
-
-
+  vyper-py39:
+    build:
+      context: .
+      dockerfile: dev.py39.Dockerfile
+    volumes:
+      - .:/code
+    environment:
+      PYTHONBREAKPOINT: ipdb.set_trace

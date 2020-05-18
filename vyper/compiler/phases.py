@@ -133,7 +133,6 @@ class CompilerData:
     def vyper_module(self) -> vy_ast.Module:
         if not hasattr(self, "_vyper_module"):
             self._vyper_module = generate_ast(self.source_code, self.source_id)
-            # self._vyper_module = generate_ast(self.vyper_code, self.source_id)
 
         return self._vyper_module
 
