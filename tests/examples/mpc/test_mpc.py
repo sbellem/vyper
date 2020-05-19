@@ -1,34 +1,31 @@
 import pytest
 
-from vyper import compiler
-
 INITIAL_VALUE = 4
 
 
+# NOTE Taken and adapted from vyperlang/vyper.
 def _get_contract(w3, source_code, *args, **kwargs):
     from tests.base_conftest import VyperContract
     from tests.grammar.conftest import get_lark_grammar
+    from ratel import RatelCompiler
 
     LARK_GRAMMAR = get_lark_grammar()
-    return_vyper_source = kwargs.pop("return_vyper_source", False)
 
-    out = compiler.compile_code(
+    ratel_compiler = RatelCompiler()
+    out = ratel_compiler.compile(
         source_code,
-        ["abi", "bytecode"],
-        interface_codes=kwargs.pop("interface_codes", None),
+        vyper_output_formats=["abi", "bytecode"],
+        vyper_interface_codes=kwargs.pop("interface_codes", None),
         evm_version=kwargs.pop("evm_version", None),
-        foreign_code_compiler=kwargs.pop("foreign_code_compiler", None),
-        return_vyper_source=return_vyper_source,
+        mpc_output_formats=kwargs.pop("mpc_output_formats", None),
     )
 
-    if return_vyper_source:
-        out, vyper_source = out
-    else:
-        vyper_source = source_code
-
+    vyper_source = ratel_compiler._vyper_code
     LARK_GRAMMAR.parse(vyper_source + "\n")  # Test grammar.
-    abi = out["abi"]
-    bytecode = out["bytecode"]
+
+    vyper_output = out["vyper"]
+    abi = vyper_output["abi"]
+    bytecode = vyper_output["bytecode"]
     value = (
         kwargs.pop("value_in_eth", 0) * 10 ** 18
     )  # Handle deploying with an eth value.
@@ -65,15 +62,7 @@ def mpc_contract_code():
 
 @pytest.fixture
 def mpc_contract(w3, get_contract, mpc_contract_code):
-    from mpc.compiler.machine import RatelCompiler
-
-    foreign_code_compiler = RatelCompiler()
-    contract = get_contract(
-        mpc_contract_code,
-        INITIAL_VALUE,
-        foreign_code_compiler=foreign_code_compiler,
-        return_vyper_source=True,
-    )
+    contract = get_contract(mpc_contract_code, INITIAL_VALUE,)
     return contract
 
 
@@ -82,14 +71,20 @@ def test_initial_state(mpc_contract):
     assert mpc_contract.storedData() == INITIAL_VALUE
 
 
-@pytest.mark.skip
 def test_compile(mpc_contract_code):
-    from vyper import compiler
+    from tests.grammar.conftest import get_lark_grammar
+    from ratel import RatelCompiler
 
-    compiler_output = compiler.compile_code(
-        mpc_contract_code,
-        output_formats=["abi", "bytecode", "mpc"],
-        interface_codes=None,
-        evm_version=None,
+    LARK_GRAMMAR = get_lark_grammar()
+
+    ratel_compiler = RatelCompiler()
+    out = ratel_compiler.compile(
+        mpc_contract_code, vyper_output_formats=["abi", "bytecode"],
     )
-    assert compiler_output
+
+    vyper_source = ratel_compiler._vyper_code
+    LARK_GRAMMAR.parse(vyper_source + "\n")  # Test grammar.
+    mpc_output = out["mpc"]
+    mpc_src_code = mpc_output["src_code"]
+    exec(mpc_src_code, globals())
+    assert multiply(3, 4) == 12  # noqa F821

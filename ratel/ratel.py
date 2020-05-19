@@ -41,20 +41,23 @@ class Transformer(ast.NodeTransformer):
                 self.mpc_nodes.append(node)
                 self.mpc_module.body.append(node)
                 return None
+        else:
+            return node
 
     def visit_FunctionDef(self, node):  # noqa N802
-        self._visit_function_def(node)
+        return self._visit_function_def(node)
 
     def visit_AsyncFunctionDef(self, node):  # noqa N802
-        self._visit_function_def(node)
+        return self._visit_function_def(node)
 
 
 class RatelCompiler:
-    def __init__(self, *, contract_source, node_transformer_class=None):
+    def __init__(self, *, node_transformer_class=None):
+        # XXX def __init__(self, *, contract_source, node_transformer_class=None):
         if node_transformer_class is None:
             node_transformer_class = Transformer
         self.node_transformer = node_transformer_class()
-        self.contract_source = contract_source
+        # XXX self.contract_source = contract_source
         # intermediate code elements
         self._pythonized_code = None
         self._metadata = {}
@@ -62,7 +65,7 @@ class RatelCompiler:
         self._vyper_code_tree = None
         self._mpc_code_tree = None
         self._vyper_code = None
-        self._mpc_code
+        self._mpc_code = None
 
     def _pythonize(self, contract_source):
         class_types, reformatted_code = pre_parse(contract_source)
@@ -92,8 +95,8 @@ class RatelCompiler:
         self,
         contract_source,
         *,
-        vyper_output_formats,
-        vyper_interface_codes,
+        vyper_output_formats=None,
+        vyper_interface_codes=None,
         evm_version=DEFAULT_EVM_VERSION,
         mpc_output_formats=None
     ):
@@ -101,13 +104,13 @@ class RatelCompiler:
         if mpc_output_formats:
             raise NotImplementedError
         else:
-            mpc_output_formats = ("str",)
+            mpc_output_formats = ("src_code",)
         vyper_code, mpc_code = self._extract_codes(contract_source)
         vyper_output = vyper_compiler.compile_code(
-            contract_source,
+            vyper_code,
             output_formats=vyper_output_formats,
             interface_codes=vyper_interface_codes,
             evm_version=evm_version,
         )
-        mpc_output = self._mpc_code
+        mpc_output = {"src_code": self._mpc_code}
         return {"vyper": vyper_output, "mpc": mpc_output}
